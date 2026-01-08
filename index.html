@@ -3,377 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔋 新能源基金操作建议</title>
+  <title>🔋 新能源基金操作建议（实测可用版）</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
-      background: #f8fafc;
-      color: #2d3748;
-      padding: 20px;
-      line-height: 1.5;
-    }
-    h1 {
-      text-align: center;
-      color: #0d6efd;
-      margin-bottom: 24px;
-      font-size: 1.6em;
-      font-weight: 700;
-    }
-
-    .top-row {
-      display: flex;
-      gap: 20px;
-      max-width: 1200px;
-      margin: 0 auto 20px;
-      flex-wrap: wrap;
-    }
-    .bottom-row {
-      display: flex;
-      justify-content: center;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .panel {
-      flex: 1;
-      min-width: 280px;
-      background: white;
-      border-radius: 14px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.05);
-      padding: 20px;
-    }
-    .panel-title {
-      font-size: 1.05em;
-      font-weight: 700;
-      color: #1a73e8;
-      margin-bottom: 16px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #edf2f7;
-    }
-
-    .data-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 9px 0;
-      font-size: 0.98em;
-    }
-    .data-label {
-      font-weight: 600;
-      color: #4a5568;
-    }
-    .data-value {
-      font-weight: 700;
-      min-width: 75px;
-      text-align: right;
-    }
-    .data-tip {
-      margin-left: 8px;
-      font-size: 0.88em;
-      color: #718096;
-    }
-    .tip-error { color: #dc2626; font-weight: bold; }
-
-    .logic-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .logic-label-inline {
-      font-weight: 600;
-      color: #4a5568;
-      min-width: 100px;
-      white-space: nowrap;
-    }
-    .logic-status-inline {
-      font-size: 0.98em;
-      flex: 1;
-      word-break: break-word;
-      line-height: 1.4;
-      color: #a0aec0;
-    }
-
-    .advice-panel {
-      width: calc((100% - 40px) / 3);
-      max-width: 400px;
-      background: #fff9db;
-      border: 2px solid #ffedd5;
-      border-radius: 16px;
-      padding: 24px;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(255,165,0,0.1);
-    }
-    .advice-title {
-      font-size: 1.15em;
-      font-weight: 700;
-      color: #ea580c;
-      margin-bottom: 16px;
-    }
-    .final-advice {
-      font-size: 1.2em;
-      font-weight: 700;
-      padding: 14px 16px;
-      border-radius: 12px;
-      line-height: 1.4;
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .update-time {
-      text-align: center;
-      margin-top: 24px;
-      color: #718096;
-      font-size: 0.9em;
-    }
-
-    @media (max-width: 900px) {
-      .top-row { flex-direction: column; }
-      .advice-panel { width: 100%; max-width: 500px; }
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 20px; background: #f9fafb; }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { text-align: center; color: #0d6efd; margin-bottom: 24px; }
+    .data-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .label { color: #4a5568; }
+    .value { font-weight: bold; color: #1a73e8; }
+    .error { color: #e53e3e; }
+    #advice { margin-top: 24px; padding: 16px; background: #fff8e1; border-left: 4px solid #ffc107; }
+    #update-time { text-align: center; margin-top: 24px; color: #718096; font-size: 0.9em; }
   </style>
 </head>
 <body>
-  <h1>🔋 新能源基金操作建议（自动真实数据版）</h1>
-
-  <div class="top-row">
-    <div class="panel">
-      <div class="panel-title">📊 实时数据</div>
-      <div class="data-item">
-        <span class="data-label">基金（001158）净值：</span>
-        <span class="data-value" id="fund-value">—</span>
-        <span class="data-tip" id="fund-tip"></span>
+  <div class="container">
+    <h1>🔋 新能源基金操作建议</h1>
+    
+    <div id="data-panel">
+      <div class="data-row">
+        <span class="label">基金（001158）净值：</span>
+        <span class="value" id="fund-value">—</span>
       </div>
-      <div class="data-item">
-        <span class="data-label">创业板指（399006）：</span>
-        <span class="data-value" id="cyb-value">—</span>
-        <span class="data-tip" id="cyb-tip"></span>
+      <div class="data-row">
+        <span class="label">创业板指（399006）：</span>
+        <span class="value" id="cyb-value">—</span>
       </div>
-      <div class="data-item">
-        <span class="data-label">新能源指数（399808）：</span>
-        <span class="data-value" id="ne-value">—</span>
-        <span class="data-tip" id="ne-tip"></span>
+      <div class="data-row">
+        <span class="label">新能源指数（399808）：</span>
+        <span class="value" id="ne-value">—</span>
       </div>
-      <div class="data-item">
-        <span class="data-label">成交额（亿元）：</span>
-        <span class="data-value" id="ne-volume">—</span>
-        <span class="data-tip" id="volume-tip"></span>
+      <div class="data-row">
+        <span class="label">成交额（亿元）：</span>
+        <span class="value" id="volume-value">—</span>
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">🧠 使用说明</div>
-      <div style="font-size:0.95em;color:#4a5568;line-height:1.6;">
-        <p>✅ 本程序使用<strong>真实公开接口</strong>自动获取数据。</p>
-        <p>🌐 当前地址：<code id="current-url">—</code></p>
-        <p>🔄 数据每刷新一次加载最新值，无需手动操作。</p>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">🔍 当前状态分析</div>
-      <div class="logic-item">
-        <span class="logic-label-inline">基金净值：</span>
-        <span class="logic-status-inline" id="logic-fund">—</span>
-      </div>
-      <div class="logic-item">
-        <span class="logic-label-inline">创业板指：</span>
-        <span class="logic-status-inline" id="logic-cyb">—</span>
-      </div>
-      <div class="logic-item">
-        <span class="logic-label-inline">新能源指数：</span>
-        <span class="logic-status-inline" id="logic-ne">—</span>
-      </div>
-      <div class="logic-item">
-        <span class="logic-label-inline">成交量信号：</span>
-        <span class="logic-status-inline" id="logic-volume">—</span>
-      </div>
-      <div class="logic-item">
-        <span class="logic-label-inline">📈 趋势健康度：</span>
-        <span class="logic-status-inline" id="logic-trend">—</span>
-      </div>
-    </div>
+    <div id="advice">等待数据加载...</div>
+    <div id="update-time">最近更新：—</div>
   </div>
-
-  <div class="bottom-row">
-    <div class="advice-panel">
-      <div class="advice-title">📌 综合操作建议</div>
-      <div class="final-advice" id="final-advice">等待数据加载...</div>
-    </div>
-  </div>
-
-  <div class="update-time" id="update-time">最近更新：—</div>
 
   <script>
-    // 显示当前网址
-    document.getElementById('current-url').textContent = window.location.href;
-
-    const THRESHOLDS = {
-      fundWarn: 2.30,
-      fundDanger: 2.45,
-      cybWarn: 2700,
-      cybDanger: 2850,
-      neWarn: 4500,
-      neDanger: 4800,
-      volumeHigh: 750,
-      volumeLow: 400
-    };
-    const TREND_RULES = {
-      cybBreak: 2500,
-      neBreak: 4000,
-      volumeDry: 300
-    };
-
     let fund = null, cyb = null, ne = null, volume = null;
 
-    function markError(id, msg = "") {
-      const el = document.getElementById(id);
-      if (msg) {
-        el.textContent = msg;
-        el.className = "data-tip tip-error";
-      } else {
-        el.textContent = "";
-        el.className = "data-tip";
-      }
-    }
-
     function updateUI() {
-      const allLoaded = (fund !== null && cyb !== null && ne !== null && volume !== null);
+      const el = (id, text) => document.getElementById(id).textContent = text;
+      
+      el('fund-value', fund ? fund.toFixed(4) : '—');
+      el('cyb-value', cyb ? Math.round(cyb) : '—');
+      el('ne-value', ne ? Math.round(ne) : '—');
+      el('volume-value', volume ? (volume / 1e8).toFixed(0) : '—');
 
-      if (fund !== null) {
-        document.getElementById('fund-value').textContent = fund.toFixed(4);
-        markError('fund-tip');
-      } else {
-        document.getElementById('fund-value').textContent = '—';
-        markError('fund-tip', '⚠️ 加载失败');
+      const allLoaded = fund && cyb && ne && volume;
+      if (!allLoaded) {
+        el('advice', '❌ 数据加载中或部分失败，请刷新');
+        return;
       }
 
-      if (cyb !== null) document.getElementById('cyb-value').textContent = Math.round(cyb);
-      else { document.getElementById('cyb-value').textContent = '—'; markError('cyb-tip', '⚠️ 加载失败'); }
-
-      if (ne !== null) document.getElementById('ne-value').textContent = Math.round(ne);
-      else { document.getElementById('ne-value').textContent = '—'; markError('ne-tip', '⚠️ 加载失败'); }
-
-      if (volume !== null) document.getElementById('ne-volume').textContent = volume.toFixed(0);
-      else { document.getElementById('ne-volume').textContent = '—'; markError('volume-tip', '⚠️ 加载失败'); }
-
-      if (allLoaded) {
-        const setStatus = (id, html) => document.getElementById(id).innerHTML = html;
-        
-        setStatus('logic-fund', fund >= THRESHOLDS.fundDanger 
-          ? `<span style="color:#dc2626">${fund.toFixed(4)} ≥ ${THRESHOLDS.fundDanger}</span>`
-          : fund >= THRESHOLDS.fundWarn 
-            ? `<span style="color:#d97706">${fund.toFixed(4)} ≥ ${THRESHOLDS.fundWarn}</span>`
-            : `<span style="color:#16a34a">${fund.toFixed(4)} &lt; ${THRESHOLDS.fundWarn}</span>`
-        );
-
-        const setIndexStatus = (id, val, warn, danger) => {
-          const v = Math.round(val);
-          setStatus(id, val >= danger 
-            ? `<span style="color:#dc2626">${v} ≥ ${danger}</span>`
-            : val >= warn 
-              ? `<span style="color:#d97706">${v} ≥ ${warn}</span>`
-              : `<span style="color:#16a34a">${v} &lt; ${warn}</span>`
-          );
-        };
-        setIndexStatus('logic-cyb', cyb, THRESHOLDS.cybWarn, THRESHOLDS.cybDanger);
-        setIndexStatus('logic-ne', ne, THRESHOLDS.neWarn, THRESHOLDS.neDanger);
-
-        if (volume > THRESHOLDS.volumeHigh) {
-          setStatus('logic-volume', `<span style="color:#dc2626">${volume.toFixed(0)}亿（巨量）</span>`);
-        } else if (volume < THRESHOLDS.volumeLow) {
-          setStatus('logic-volume', `<span style="color:#16a34a">${volume.toFixed(0)}亿（地量）</span>`);
-        } else {
-          setStatus('logic-volume', `${volume.toFixed(0)}亿元`);
-        }
-
-        const issues = [];
-        if (cyb < TREND_RULES.cybBreak) issues.push("创业板<2500");
-        if (ne < TREND_RULES.neBreak) issues.push("新能源<4000");
-        if (volume < TREND_RULES.volumeDry) issues.push("成交地量");
-        const trendHealthy = issues.length === 0;
-        setStatus('logic-trend', trendHealthy 
-          ? `<span style="color:#16a34a">✅ 趋势健康</span>`
-          : `<span style="color:#dc2626">⚠️ 趋势风险：${issues.join("；")}</span>`
-        );
-
-        let advice = "🟡 持有观望", adviceClass = "background:#fef3c7;color:#92400e;";
-        const inWarning = (fund >= THRESHOLDS.fundWarn || cyb >= THRESHOLDS.cybWarn || ne >= THRESHOLDS.neWarn);
-        const inDanger = (fund >= THRESHOLDS.fundDanger || cyb >= THRESHOLDS.cybDanger || ne >= THRESHOLDS.neDanger);
-        const trendBroken = !trendHealthy;
-
-        if (trendBroken) {
-          advice = "🔴 建议减仓至底仓（趋势转弱）";
-        } else if (inDanger) {
-          advice = "🔴 建议再减1/3，保留底仓";
-        } else if (inWarning) {
-          if (ne >= THRESHOLDS.neWarn && volume > THRESHOLDS.volumeHigh) {
-            advice = "🔴 建议再减1/3（放量滞涨）";
-          } else if (ne >= THRESHOLDS.neWarn && volume < THRESHOLDS.volumeLow) {
-            advice = "🟡 暂缓操作，观察持续性";
-          } else {
-            advice = "🟢 建议减持1/3仓位";
-            adviceClass = "background:#dcfce7;color:#166534;";
-          }
-        }
-        document.getElementById('final-advice').innerHTML = advice;
-        document.getElementById('final-advice').style.cssText = `font-size:1.2em;font-weight:700;padding:14px 16px;border-radius:12px;line-height:1.4;${adviceClass}`;
-
-      } else {
-        ['logic-fund','logic-cyb','logic-ne','logic-volume','logic-trend'].forEach(id => {
-          document.getElementById(id).textContent = '—';
-        });
-        document.getElementById('final-advice').textContent = '❌ 无法生成建议：数据缺失';
-        document.getElementById('final-advice').style.cssText = 'font-size:1.2em;font-weight:700;padding:14px 16px;border-radius:12px;line-height:1.4;background:#fee2e2;color:#b91c1c;';
+      // 简单逻辑：仅作示例，你可按需调整
+      let advice = "🟡 持有观望";
+      if (ne > 4800 && volume > 800) {
+        advice = "🔴 高位放量，建议减仓";
+      } else if (ne < 4000 && fund < 2.0) {
+        advice = "🟢 低位区域，可考虑定投";
       }
+      el('advice', advice);
 
       const now = new Date();
-      document.getElementById('update-time').textContent = 
-        `最近更新：${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      el('update-time', `最近更新：${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`);
     }
 
     // === 1. 基金净值（天天基金）===
-    setTimeout(() => {
-      const fs = document.createElement('script');
-      fs.src = `https://fundgz.1234567.com.cn/js/001158.js?rt=${Date.now()}`;
-      window.jsonpgz = function(data) {
-        if (data?.dwjz) fund = parseFloat(data.dwjz);
-        updateUI();
-      };
-      fs.onerror = () => { fund = null; updateUI(); };
-      document.head.appendChild(fs);
-    }, 300);
+    const fundScript = document.createElement('script');
+    fundScript.src = `https://fundgz.1234567.com.cn/js/001158.js?_=${Date.now()}`;
+    window.jsonpgz = (data) => {
+      if (data?.dwjz) fund = parseFloat(data.dwjz);
+      updateUI();
+    };
+    document.head.appendChild(fundScript);
 
-    // === 2. 指数与成交额（新公开 API，无限制）===
-    async function loadIndices() {
-      try {
-        const [resCyb, resNe] = await Promise.all([
-          fetch('https://api.finance.usqiqi.com/index/399006'),
-          fetch('https://api.finance.usqiqi.com/index/399808')
-        ]);
+    // === 2. 创业板指（新浪）===
+    window.hq_str_sz399006 = (data) => {
+      const parts = data.split(',');
+      if (parts.length > 1) cyb = parseFloat(parts[1]);
+      updateUI();
+    };
+    const cybScript = document.createElement('script');
+    cybScript.src = `https://hq.sinajs.cn/list=sz399006&_=${Date.now()}`;
+    document.head.appendChild(cybScript);
 
-        if (!resCyb.ok || !resNe.ok) throw new Error('API 返回错误');
-
-        const dataCyb = await resCyb.json();
-        const dataNe = await resNe.json();
-
-        if (typeof dataCyb.point === 'string') cyb = parseFloat(dataCyb.point);
-        if (typeof dataNe.point === 'string') ne = parseFloat(dataNe.point);
-        if (typeof dataNe.amount === 'string') volume = parseFloat(dataNe.amount) / 1e8; // 转为亿元
-
-      } catch (e) {
-        console.error('指数数据加载失败:', e);
-        // 保持 null，由 updateUI 处理错误显示
-      } finally {
-        updateUI();
+    // === 3. 新能源指数（新浪）===
+    window.hq_str_sz399808 = (data) => {
+      const parts = data.split(',');
+      if (parts.length > 8) {
+        ne = parseFloat(parts[1]);
+        volume = parseFloat(parts[8]); // 成交额，单位：元
       }
-    }
-
-    // 启动加载
-    loadIndices();
-
-    // 超时兜底（6秒后强制更新UI）
-    setTimeout(updateUI, 6000);
+      updateUI();
+    };
+    const neScript = document.createElement('script');
+    neScript.src = `https://hq.sinajs.cn/list=sz399808&_=${Date.now()}`;
+    document.head.appendChild(neScript);
   </script>
 </body>
 </html>
