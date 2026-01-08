@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔋 新能源基金操作建议（实测可用版）</title>
+  <title>🔋 新能源基金操作建议（真实可用版）</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 20px; background: #f9fafb; }
     .container { max-width: 800px; margin: 0 auto; }
@@ -18,7 +18,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>🔋 新能源基金操作建议</h1>
+    <h1>🔋 新能源基金操作建议（自动真实数据版）</h1>
     
     <div id="data-panel">
       <div class="data-row">
@@ -54,13 +54,13 @@
       el('ne-value', ne ? Math.round(ne) : '—');
       el('volume-value', volume ? (volume / 1e8).toFixed(0) : '—');
 
-      const allLoaded = fund && cyb && ne && volume;
+      const allLoaded = fund !== null && cyb !== null && ne !== null && volume !== null;
       if (!allLoaded) {
-        el('advice', '❌ 数据加载中或部分失败，请刷新');
+        el('advice', '❌ 无法生成建议：数据缺失');
         return;
       }
 
-      // 简单逻辑：仅作示例，你可按需调整
+      // 简单策略
       let advice = "🟡 持有观望";
       if (ne > 4800 && volume > 800) {
         advice = "🔴 高位放量，建议减仓";
@@ -73,37 +73,53 @@
       el('update-time', `最近更新：${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`);
     }
 
-    // === 1. 基金净值（天天基金）===
+    // 1. 基金净值（天天基金，JSONP）
     const fundScript = document.createElement('script');
     fundScript.src = `https://fundgz.1234567.com.cn/js/001158.js?_=${Date.now()}`;
     window.jsonpgz = (data) => {
-      if (data?.dwjz) fund = parseFloat(data.dwjz);
+      fund = data?.dwjz ? parseFloat(data.dwjz) : null;
       updateUI();
     };
+    fundScript.onerror = () => { fund = null; updateUI(); };
     document.head.appendChild(fundScript);
 
-    // === 2. 创业板指（新浪）===
-    window.hq_str_sz399006 = (data) => {
-      const parts = data.split(',');
-      if (parts.length > 1) cyb = parseFloat(parts[1]);
-      updateUI();
-    };
-    const cybScript = document.createElement('script');
-    cybScript.src = `https://hq.sinajs.cn/list=sz399006&_=${Date.now()}`;
-    document.head.appendChild(cybScript);
+    // 2. 通过 CORS 代理获取指数数据
+    async function fetchViaProxy(symbol, callback) {
+      try {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://hq.sinajs.cn/list=${symbol}`)}`;
+        const response = await fetch(proxyUrl);
+        const text = await response.text();
+        // 解析：var hq_str_xxx="名称,当前价,..."
+        const match = text.match(/"([^"]+)"/);
+        if (match) {
+          const parts = match[1].split(',');
+          callback(parts);
+        } else {
+          callback(null);
+        }
+      } catch (e) {
+        console.error(`Failed to load ${symbol}:`, e);
+        callback(null);
+      }
+    }
 
-    // === 3. 新能源指数（新浪）===
-    window.hq_str_sz399808 = (data) => {
-      const parts = data.split(',');
-      if (parts.length > 8) {
+    // 加载创业板
+    fetchViaProxy('sz399006', (parts) => {
+      cyb = parts && parts.length > 1 ? parseFloat(parts[1]) : null;
+      updateUI();
+    });
+
+    // 加载新能源
+    fetchViaProxy('sz399808', (parts) => {
+      if (parts && parts.length > 8) {
         ne = parseFloat(parts[1]);
-        volume = parseFloat(parts[8]); // 成交额，单位：元
+        volume = parseFloat(parts[8]); // 成交额（元）
+      } else {
+        ne = null;
+        volume = null;
       }
       updateUI();
-    };
-    const neScript = document.createElement('script');
-    neScript.src = `https://hq.sinajs.cn/list=sz399808&_=${Date.now()}`;
-    document.head.appendChild(neScript);
+    });
   </script>
 </body>
 </html>
