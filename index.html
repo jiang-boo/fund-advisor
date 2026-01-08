@@ -332,8 +332,7 @@
         `最近更新：${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     }
 
-    // === 数据加载 ===
-    // 1. 基金净值（天天基金）
+    // === 1. 基金净值（天天基金）===
     setTimeout(() => {
       const fs = document.createElement('script');
       fs.src = `https://fundgz.1234567.com.cn/js/001158.js?rt=${Date.now()}`;
@@ -345,80 +344,84 @@
       document.head.appendChild(fs);
     }, 300);
 
-    // 2. 创业板 + 新能源指数（网易财经）
-    function loadFrom163() {
-      const codes = ['000399006', '100399808'];
-      let count = 0;
-      const total = codes.length;
+    // === 2. 创业板 & 新能源指数（腾讯证券 gtimg）===
+    function loadTencentData() {
+      const codes = ['399006', '399808'];
+      let loadedCount = 0;
 
-      codes.forEach((code, i) => {
+      codes.forEach(code => {
         const script = document.createElement('script');
-        const cbName = `handle163_${i}_${Date.now()}`;
-        script.src = `https://api.money.126.net/data/feed/${code},money.api?callback=${cbName}&_=${Date.now()}`;
+        const cbName = `tencent_cb_${code}_${Date.now()}`;
+        script.src = `https://qt.gtimg.cn/q=sz${code}&callback=${cbName}&_=${Date.now()}`;
 
         window[cbName] = function(data) {
           try {
-            const price = data[code]?.price;
-            if (price && !isNaN(price)) {
-              if (code === '000399006') cyb = price;
-              else ne = price;
+            // 格式：v_sz399006="51～创业板指～1872.34～..."
+            const match = data.match(/～([^～]+)～([^～]+)～/);
+            if (match) {
+              const price = parseFloat(match[2]);
+              if (!isNaN(price)) {
+                if (code === '399006') cyb = price;
+                else if (code === '399808') ne = price;
+              }
             }
           } catch (e) {}
           cleanup();
         };
 
-        script.onerror = () => { cleanup(); };
-
-        document.head.appendChild(script);
+        script.onerror = cleanup;
 
         function cleanup() {
           delete window[cbName];
-          const el = document.querySelector(`script[src*="${code}"]`);
-          if (el) document.head.removeChild(el);
-          count++;
-          if (count === total) loadVolume();
+          if (document.head.contains(script)) {
+            document.head.removeChild(script);
+          }
+          loadedCount++;
+          if (loadedCount === codes.length) {
+            loadVolume();
+          }
         }
+
+        document.head.appendChild(script);
       });
     }
 
-    // 3. 成交额（东方财富）
+    // === 3. 成交额（东方财富 HTTPS）===
     function loadVolume() {
       const script = document.createElement('script');
-      script.src = `https://push2.eastmoney.com/api/qt/ulist/get?secids=0.399808&fields=f6&cb=handleVol&_=${Date.now()}`;
-      
-      window.handleVol = function(data) {
+      const cbName = `vol_cb_${Date.now()}`;
+      script.src = `https://push2.eastmoney.com/api/qt/stock/get?invt=2&fltt=2&fields=f6&secid=0.399808&cb=${cbName}&_=${Date.now()}`;
+
+      window[cbName] = function(data) {
         try {
-          if (data?.data?.diff?.[0]?.f6) {
-            const amount = data.data.diff[0].f6;
-            volume = amount / 1e8;
+          if (data?.data?.f6 !== undefined) {
+            volume = data.data.f6 / 1e8; // 转为亿元
           }
         } catch (e) {}
         cleanup();
       };
 
       script.onerror = () => { cleanup(); };
-      document.head.appendChild(script);
 
       function cleanup() {
-        delete window.handleVol;
+        delete window[cbName];
         const el = document.querySelector(`script[src*="399808"]`);
-        if (el) document.head.removeChild(el);
+        if (el && document.head.contains(el)) {
+          document.head.removeChild(el);
+        }
         updateUI();
       }
+
+      document.head.appendChild(script);
     }
 
     // 启动加载
-    loadFrom163();
+    loadTencentData();
 
-    // 超时保护
+    // 超时兜底
     setTimeout(() => {
-      [fund, cyb, ne, volume].forEach(v => {
-        if (v === null) {
-          // 保持 null，已在 updateUI 中处理
-        }
-      });
       updateUI();
-    }, 6000);
+    }, 8000);
   </script>
 </body>
 </html>
