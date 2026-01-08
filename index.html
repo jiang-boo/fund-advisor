@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔋 新能源基金操作建议（自动真实数据版）</title>
+  <title>🔋 新能源基金操作建议</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -142,22 +142,22 @@
       <div class="data-item">
         <span class="data-label">基金（001158）净值：</span>
         <span class="data-value" id="fund-value">—</span>
-        <span class="data-tip" id="fund-tip">—</span>
+        <span class="data-tip" id="fund-tip"></span>
       </div>
       <div class="data-item">
         <span class="data-label">创业板指（399006）：</span>
         <span class="data-value" id="cyb-value">—</span>
-        <span class="data-tip" id="cyb-tip">—</span>
+        <span class="data-tip" id="cyb-tip"></span>
       </div>
       <div class="data-item">
         <span class="data-label">新能源指数（399808）：</span>
         <span class="data-value" id="ne-value">—</span>
-        <span class="data-tip" id="ne-tip">—</span>
+        <span class="data-tip" id="ne-tip"></span>
       </div>
       <div class="data-item">
         <span class="data-label">成交额（亿元）：</span>
         <span class="data-value" id="ne-volume">—</span>
-        <span class="data-tip" id="volume-tip">—</span>
+        <span class="data-tip" id="volume-tip"></span>
       </div>
     </div>
 
@@ -165,9 +165,8 @@
       <div class="panel-title">🧠 使用说明</div>
       <div style="font-size:0.95em;color:#4a5568;line-height:1.6;">
         <p>✅ 本程序使用<strong>真实公开接口</strong>自动获取数据。</p>
-        <p>⚠️ 若显示“加载失败”，请将本页面部署到 <strong>GitHub Pages</strong>（免费 HTTPS 网站）。</p>
-        <p>❌ 本地双击打开（file://）时，部分数据可能因安全限制无法加载。</p>
-        <p>🔗 教程：<a href="https://pages.github.com/" target="_blank">https://pages.github.com/</a></p>
+        <p>🌐 当前地址：<code id="current-url">—</code></p>
+        <p>⚠️ 若数据加载失败，请确认网址以 <strong>https://</strong> 开头。</p>
       </div>
     </div>
 
@@ -206,6 +205,9 @@
   <div class="update-time" id="update-time">最近更新：—</div>
 
   <script>
+    // 显示当前网址
+    document.getElementById('current-url').textContent = window.location.href;
+
     const THRESHOLDS = {
       fundWarn: 2.30,
       fundDanger: 2.45,
@@ -224,17 +226,27 @@
 
     let fund = null, cyb = null, ne = null, volume = null;
 
-    function markError(id, msg) {
-      document.getElementById(id).textContent = msg;
-      document.getElementById(id).className = "data-tip tip-error";
+    function markError(id, msg = "") {
+      const el = document.getElementById(id);
+      if (msg) {
+        el.textContent = msg;
+        el.className = "data-tip tip-error";
+      } else {
+        el.textContent = "";
+        el.className = "data-tip";
+      }
     }
 
     function updateUI() {
       const allLoaded = (fund !== null && cyb !== null && ne !== null && volume !== null);
 
-      // 更新数据显示
-      if (fund !== null) document.getElementById('fund-value').textContent = fund.toFixed(4);
-      else { document.getElementById('fund-value').textContent = '—'; markError('fund-tip', '⚠️ 加载失败'); }
+      if (fund !== null) {
+        document.getElementById('fund-value').textContent = fund.toFixed(4);
+        markError('fund-tip');
+      } else {
+        document.getElementById('fund-value').textContent = '—';
+        markError('fund-tip', '⚠️ 加载失败');
+      }
 
       if (cyb !== null) document.getElementById('cyb-value').textContent = Math.round(cyb);
       else { document.getElementById('cyb-value').textContent = '—'; markError('cyb-tip', '⚠️ 加载失败'); }
@@ -246,7 +258,6 @@
       else { document.getElementById('ne-volume').textContent = '—'; markError('volume-tip', '⚠️ 加载失败'); }
 
       if (allLoaded) {
-        // === 状态分析逻辑（略，同前）===
         const setStatus = (id, html) => document.getElementById(id).innerHTML = html;
         
         setStatus('logic-fund', fund >= THRESHOLDS.fundDanger 
@@ -286,7 +297,6 @@
           : `<span style="color:#dc2626">⚠️ 趋势风险：${issues.join("；")}</span>`
         );
 
-        // === 建议生成（略）===
         let advice = "🟡 持有观望", adviceClass = "background:#fef3c7;color:#92400e;";
         const inWarning = (fund >= THRESHOLDS.fundWarn || cyb >= THRESHOLDS.cybWarn || ne >= THRESHOLDS.neWarn);
         const inDanger = (fund >= THRESHOLDS.fundDanger || cyb >= THRESHOLDS.cybDanger || ne >= THRESHOLDS.neDanger);
@@ -337,13 +347,13 @@
 
     // 2. 创业板 + 新能源指数（网易财经）
     function loadFrom163() {
-      const codes = ['000399006', '100399808']; // 网易编码：0+深交所+6位代码
+      const codes = ['000399006', '100399808'];
       let count = 0;
       const total = codes.length;
 
       codes.forEach((code, i) => {
         const script = document.createElement('script');
-        const cbName = `handle163_${i}`;
+        const cbName = `handle163_${i}_${Date.now()}`;
         script.src = `https://api.money.126.net/data/feed/${code},money.api?callback=${cbName}&_=${Date.now()}`;
 
         window[cbName] = function(data) {
@@ -371,7 +381,7 @@
       });
     }
 
-    // 3. 成交额（东方财富，通过 f6 字段：成交额（元））
+    // 3. 成交额（东方财富）
     function loadVolume() {
       const script = document.createElement('script');
       script.src = `https://push2.eastmoney.com/api/qt/ulist/get?secids=0.399808&fields=f6&cb=handleVol&_=${Date.now()}`;
@@ -379,8 +389,8 @@
       window.handleVol = function(data) {
         try {
           if (data?.data?.diff?.[0]?.f6) {
-            const amount = data.data.diff[0].f6; // 单位：元
-            volume = amount / 1e8; // 转为亿元
+            const amount = data.data.diff[0].f6;
+            volume = amount / 1e8;
           }
         } catch (e) {}
         cleanup();
@@ -402,7 +412,7 @@
 
     // 超时保护
     setTimeout(() => {
-      [fund, cyb, ne, volume].forEach((v, i, arr) => {
+      [fund, cyb, ne, volume].forEach(v => {
         if (v === null) {
           // 保持 null，已在 updateUI 中处理
         }
@@ -411,5 +421,4 @@
     }, 6000);
   </script>
 </body>
-
 </html>
