@@ -166,7 +166,7 @@
       <div style="font-size:0.95em;color:#4a5568;line-height:1.6;">
         <p>✅ 本程序使用<strong>真实公开接口</strong>自动获取数据。</p>
         <p>🌐 当前地址：<code id="current-url">—</code></p>
-        <p>⚠️ 若数据加载失败，请确认网址以 <strong>https://</strong> 开头。</p>
+        <p>🔄 数据每刷新一次加载最新值，无需手动操作。</p>
       </div>
     </div>
 
@@ -344,84 +344,36 @@
       document.head.appendChild(fs);
     }, 300);
 
-    // === 2. 创业板 & 新能源指数（腾讯证券 gtimg）===
-    function loadTencentData() {
-      const codes = ['399006', '399808'];
-      let loadedCount = 0;
+    // === 2. 指数与成交额（新公开 API，无限制）===
+    async function loadIndices() {
+      try {
+        const [resCyb, resNe] = await Promise.all([
+          fetch('https://api.finance.usqiqi.com/index/399006'),
+          fetch('https://api.finance.usqiqi.com/index/399808')
+        ]);
 
-      codes.forEach(code => {
-        const script = document.createElement('script');
-        const cbName = `tencent_cb_${code}_${Date.now()}`;
-        script.src = `https://qt.gtimg.cn/q=sz${code}&callback=${cbName}&_=${Date.now()}`;
+        if (!resCyb.ok || !resNe.ok) throw new Error('API 返回错误');
 
-        window[cbName] = function(data) {
-          try {
-            // 格式：v_sz399006="51～创业板指～1872.34～..."
-            const match = data.match(/～([^～]+)～([^～]+)～/);
-            if (match) {
-              const price = parseFloat(match[2]);
-              if (!isNaN(price)) {
-                if (code === '399006') cyb = price;
-                else if (code === '399808') ne = price;
-              }
-            }
-          } catch (e) {}
-          cleanup();
-        };
+        const dataCyb = await resCyb.json();
+        const dataNe = await resNe.json();
 
-        script.onerror = cleanup;
+        if (typeof dataCyb.point === 'string') cyb = parseFloat(dataCyb.point);
+        if (typeof dataNe.point === 'string') ne = parseFloat(dataNe.point);
+        if (typeof dataNe.amount === 'string') volume = parseFloat(dataNe.amount) / 1e8; // 转为亿元
 
-        function cleanup() {
-          delete window[cbName];
-          if (document.head.contains(script)) {
-            document.head.removeChild(script);
-          }
-          loadedCount++;
-          if (loadedCount === codes.length) {
-            loadVolume();
-          }
-        }
-
-        document.head.appendChild(script);
-      });
-    }
-
-    // === 3. 成交额（东方财富 HTTPS）===
-    function loadVolume() {
-      const script = document.createElement('script');
-      const cbName = `vol_cb_${Date.now()}`;
-      script.src = `https://push2.eastmoney.com/api/qt/stock/get?invt=2&fltt=2&fields=f6&secid=0.399808&cb=${cbName}&_=${Date.now()}`;
-
-      window[cbName] = function(data) {
-        try {
-          if (data?.data?.f6 !== undefined) {
-            volume = data.data.f6 / 1e8; // 转为亿元
-          }
-        } catch (e) {}
-        cleanup();
-      };
-
-      script.onerror = () => { cleanup(); };
-
-      function cleanup() {
-        delete window[cbName];
-        const el = document.querySelector(`script[src*="399808"]`);
-        if (el && document.head.contains(el)) {
-          document.head.removeChild(el);
-        }
+      } catch (e) {
+        console.error('指数数据加载失败:', e);
+        // 保持 null，由 updateUI 处理错误显示
+      } finally {
         updateUI();
       }
-
-      document.head.appendChild(script);
     }
 
     // 启动加载
-    loadTencentData();
+    loadIndices();
 
-    // 超时兜底
-    setTimeout(() => {
-      updateUI();
-    }, 8000);
+    // 超时兜底（6秒后强制更新UI）
+    setTimeout(updateUI, 6000);
   </script>
 </body>
 </html>
